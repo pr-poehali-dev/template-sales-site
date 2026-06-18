@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import PaymentDialog, { PayProduct } from '@/components/PaymentDialog';
+
+const API = 'https://functions.poehali.dev/47f33681-2804-4f21-b201-428ab6b83c08';
 
 const HERO_IMG =
   'https://cdn.poehali.dev/projects/4570fccf-7908-4cdf-9532-381e77025ae5/files/558a48f0-2d92-4aa4-817e-6f90805d69b3.jpg';
@@ -12,14 +15,16 @@ const NAV = [
   { id: 'contacts', label: 'Контакты' },
 ];
 
-const PRODUCTS = [
-  { id: 1, emoji: '✏️', title: 'Прописи букв', desc: 'Учим алфавит весело: 40 страниц с буквами и картинками.', price: 299, color: 'bg-primary', tag: '3-6 лет' },
-  { id: 2, emoji: '🔢', title: 'Считаем до 20', desc: 'Цифры, счёт и первые примеры в игровой форме.', price: 249, color: 'bg-secondary', tag: '4-7 лет' },
-  { id: 3, emoji: '🎨', title: 'Рисуем по точкам', desc: 'Развиваем моторику: 30 заданий-раскрасок.', price: 199, color: 'bg-accent', tag: '3-5 лет' },
-  { id: 4, emoji: '🦊', title: 'Логика и внимание', desc: 'Лабиринты, найди отличия и весёлые головоломки.', price: 279, color: 'bg-primary', tag: '5-8 лет' },
-  { id: 5, emoji: '🌟', title: 'Готовимся к школе', desc: 'Большой набор: буквы, цифры, прописи — всё сразу.', price: 499, color: 'bg-secondary', tag: '6-7 лет' },
-  { id: 6, emoji: '🐻', title: 'Английский для малышей', desc: 'Первые слова и буквы английского алфавита.', price: 329, color: 'bg-accent', tag: '4-7 лет' },
-];
+const CARD_COLORS = ['bg-primary', 'bg-secondary', 'bg-accent'];
+
+interface Product {
+  id: number;
+  title: string;
+  description: string;
+  emoji: string;
+  tag: string;
+  price_uzs: number;
+}
 
 const STEPS = [
   { icon: 'MousePointerClick', title: 'Выбираете шаблон', text: 'Листаете каталог и кладёте в корзину то, что нравится.' },
@@ -29,6 +34,21 @@ const STEPS = [
 
 const Index = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selected, setSelected] = useState<PayProduct | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}?action=products`)
+      .then((r) => r.json())
+      .then((d) => setProducts(d.products || []))
+      .catch(() => setProducts([]));
+  }, []);
+
+  const buy = (p: Product) => {
+    setSelected({ id: p.id, title: p.title, emoji: p.emoji, price_uzs: p.price_uzs });
+    setPayOpen(true);
+  };
 
   const scrollTo = (id: string) => {
     setMenuOpen(false);
@@ -145,24 +165,26 @@ const Index = () => {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PRODUCTS.map((p, i) => (
+          {products.map((p, i) => (
             <div
               key={p.id}
               className="group bg-card rounded-[2rem] border-2 border-border p-6 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 animate-fade-in"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div className={`${p.color} w-20 h-20 rounded-3xl flex items-center justify-center text-4xl mb-5 group-hover:animate-wiggle`}>
+              <div className={`${CARD_COLORS[i % 3]} w-20 h-20 rounded-3xl flex items-center justify-center text-4xl mb-5 group-hover:animate-wiggle`}>
                 {p.emoji}
               </div>
               <span className="inline-block bg-muted text-muted-foreground text-xs font-bold px-3 py-1 rounded-full mb-3">
                 {p.tag}
               </span>
               <h3 className="font-display font-bold text-xl mb-2">{p.title}</h3>
-              <p className="text-muted-foreground text-sm mb-5">{p.desc}</p>
+              <p className="text-muted-foreground text-sm mb-5">{p.description}</p>
               <div className="flex items-center justify-between">
-                <span className="font-display font-extrabold text-2xl text-primary">{p.price} ₽</span>
-                <Button className="rounded-full font-display font-bold gap-2 shadow-lg shadow-primary/20">
-                  <Icon name="Download" size={18} /> Купить
+                <span className="font-display font-extrabold text-xl text-primary">
+                  {p.price_uzs.toLocaleString('ru-RU')} сум
+                </span>
+                <Button onClick={() => buy(p)} className="rounded-full font-display font-bold gap-2 shadow-lg shadow-primary/20">
+                  <Icon name="ShoppingCart" size={18} /> Купить
                 </Button>
               </div>
             </div>
@@ -256,6 +278,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <PaymentDialog product={selected} open={payOpen} onClose={() => setPayOpen(false)} />
     </div>
   );
 };
