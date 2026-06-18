@@ -1,0 +1,37 @@
+{
+  "tests": [
+    {
+      "name": "Список товаров",
+      "method": "GET",
+      "path": "/?action=products",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Создание заказа Click",
+      "method": "POST",
+      "path": "/?action=create_order",
+      "body": {"product_id": 1, "provider": "click", "return_url": "https://example.com"},
+      "expectedStatus": 200,
+      "expectedBody": {"order_token": "string", "pay_url": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Создание заказа Payme",
+      "method": "POST",
+      "path": "/?action=create_order",
+      "body": {"product_id": 2, "provider": "payme", "return_url": "https://example.com"},
+      "expectedStatus": 200,
+      "expectedBody": {"order_token": "string", "pay_url": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неизвестный провайдер",
+      "method": "POST",
+      "path": "/?action=create_order",
+      "body": {"product_id": 1, "provider": "visa"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "invalid_provider"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
